@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Calendário de posts</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('cal_tema')||'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <style>
@@ -144,6 +145,7 @@ main{padding:18px max(2vw,10px) 60px;max-width:1440px;margin:auto}
    <button id="prev" aria-label="Mês anterior">‹</button>
    <button id="hoje">Hoje</button>
    <button id="next" aria-label="Próximo mês">›</button>
+   <button id="tema" aria-label="Alternar tema claro ou escuro" title="Tema claro / escuro"></button>
    <button id="sair" class="sair">Sair</button>
   </div>
   <div class="stats" id="stats" aria-label="Filtrar por status"></div>
@@ -203,6 +205,11 @@ main{padding:18px max(2vw,10px) 60px;max-width:1440px;margin:auto}
  <button class="btn pri" id="lbtn" style="margin:0">Entrar</button>
 </form></div>
 
+<script>
+{const b=document.getElementById('tema'),r=document.documentElement;
+const pinta=()=>{const claro=r.dataset.theme!=='dark';b.textContent=claro?'☾ Escuro':'☀ Claro'};
+b.onclick=()=>{r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('cal_tema',r.dataset.theme)}catch(e){}pinta()};pinta()}
+</script>
 <script src="app.js"></script>
 </body>
 </html>
