@@ -102,7 +102,7 @@ main{padding:18px max(2vw,10px) 60px;max-width:1440px;margin:auto}
 .th .meta span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .th .meta a{color:var(--accink);font-weight:700;text-decoration:none}
 .th .x{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;border:0;background:rgb(30 18 10/.75);color:#fff;font-size:16px}
-.th.busy{display:grid;place-items:center;aspect-ratio:1;font-size:13px;color:var(--mute)}
+.th.busy{display:grid;place-items:center;aspect-ratio:1;font-size:14px;font-weight:700;color:var(--accink);text-align:center;padding:8px}.th.busy small{font-weight:400;color:var(--mute);font-size:12px;word-break:break-all}
 .row{display:flex;gap:8px;align-items:center}
 .mini{height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:transparent;font-size:13px;margin-inline-start:auto}
 .foot{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center}
@@ -185,12 +185,12 @@ main{padding:18px max(2vw,10px) 60px;max-width:1440px;margin:auto}
   <div class="sec">
    <h3>A ideia <span>texto e prints de referência</span></h3>
    <div class="f"><label for="fidea">Descrição da ideia</label><textarea id="fidea" placeholder="O que vai ser o post, referência, versículo, chamada…"></textarea></div>
-   <div class="drop" id="dIdea" tabindex="0" role="button" data-kind="idea"><b>Adicionar print da ideia</b> — clique, arraste ou cole (Ctrl+V)</div>
+   <div class="drop" id="dIdea" tabindex="0" role="button" data-kind="idea"><b>Adicionar print da ideia</b> — clique, arraste ou cole (Ctrl+V). Envio rápido: o print é reduzido automaticamente</div>
    <div class="thumbs" id="tIdea"></div>
   </div>
 
   <div class="sec">
-   <h3>Post final <span>arquivo original, sem compressão (até 20 MB), guardado no Google Drive</span></h3>
+   <h3>Post final <span>arquivo original, sem compressão, guardado no Google Drive (até 1 GB)</span></h3>
    <div class="f"><div class="row"><label for="fcap">Legenda</label><button type="button" class="mini" id="copy">Copiar legenda</button></div><textarea id="fcap" placeholder="Legenda pronta para colar no Instagram"></textarea></div>
    <div class="drop" id="dFinal" tabindex="0" role="button" data-kind="final"><b>Enviar arte / vídeo final</b> — PNG, JPG, MP4 ou PDF em qualidade máxima</div>
    <div class="thumbs" id="tFinal"></div>
