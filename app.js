@@ -2,7 +2,7 @@
    CONFIGURAÇÃO — cole aqui a URL do App da Web do Apps Script
    (termina em /exec). Veja o README.
    ============================================================ */
-const API_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+const API_URL = 'https://script.google.com/macros/s/AKfycbz6rM0ujiim8dZY294Gotazw4MXzRlVpS9OihgDv8k7NVAO7Q938dlzE2rOzuFmZizS/exec';
 
 {
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -24,38 +24,7 @@ const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Mat
 
 let senha='',posts=new Map(),weeks=new Map(),filtro='todos',ed=null,pasteKind='idea',pickKind='idea',busy=0,logged=false;
 const cur=new Date();cur.setDate(1);
-const m0=/^#m-(\d{4})-(\d{2})$/.exec(location.hash);if(m0){cur.setFullYear(+m0[1],+m0[2]-1,1)}
-const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
-
-const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),3200)};
-const note=t=>{$('#note').textContent=t};
-
-/* ---------- API (Apps Script) ---------- */
-async function api(acao,dados={}){
- if(!/^https:\/\/script\.google\.com\//.test(API_URL))throw new Error('Configure a API_URL no app.js (veja o README).');
- const r=await fetch(API_URL,{method:'POST',body:JSON.stringify({senha,acao,...dados})}); // text/plain: sem preflight
- const j=await r.json();
- if(!j.ok){if(j.erro==='senha'){sair();throw new Error('Senha incorreta')}throw new Error(j.erro||'Erro no servidor')}
- return j;
-}
-async function carregar(silencioso){
- try{
-  const j=await api('listar');
-  posts=new Map(j.posts.map(p=>[p.id,p]));
-  weeks=new Map(Object.entries(j.weeks||{}));
-  note('');render();return true;
- }catch(e){if(!silencioso)note('Não consegui carregar: '+e.message);throw e}
-}
-
-/* ---------- login ---------- */
-$('#lform').onsubmit=async e=>{
- e.preventDefault();senha=$('#lsenha').value;$('#lerr').textContent='';$('#lbtn').disabled=true;$('#lbtn').textContent='Entrando…';
- try{await carregar(true);entrar($('#lkeep').checked)}catch(err){$('#lerr').textContent=err.message==='Senha incorreta'?'Senha incorreta.':err.message}
- finally{$('#lbtn').disabled=false;$('#lbtn').textContent='Entrar'}
-};
-function entrar(keep){logged=true;if(keep)store.set('cal_senha',senha);$('#login').classList.remove('on')}
-function sair(){logged=false;senha='';store.set('cal_senha',null);$('#lsenha').value='';$('#login').classList.add('on');setTimeout(()=>$('#lsenha').focus(),30)}
-$('#sair').onclick=sair;
+const m0=/^#m-(\d{4})-(\d{2})$/.exec(location.hash);if(m0){cur.setFullYear(+m0[1],+m0[2]-1,1)}I
 setInterval(()=>{if(logged&&!ed&&document.visibilityState==='visible')carregar(true).catch(()=>{})},60000);
 document.addEventListener('visibilitychange',()=>{if(logged&&!ed&&document.visibilityState==='visible')carregar(true).catch(()=>{})});
 
