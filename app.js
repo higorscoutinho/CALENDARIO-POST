@@ -22,7 +22,7 @@ const orig=id=>`https://drive.google.com/uc?export=download&id=${encodeURICompon
 const viewUrl=id=>`https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
 
-let senha='',posts=new Map(),weeks=new Map(),filtro='todos',ed=null,pasteKind='idea',pickKind='idea',busy=0,logged=false;
+let senha='',posts=new Map(),weeks=new Map(),filtro='todos',ed=null,pasteKind='idea',pickKind='idea',logged=false;
 const cur=new Date();cur.setDate(1);
 const m0=/^#m-(\d{4})-(\d{2})$/.exec(location.hash);if(m0){cur.setFullYear(+m0[1],+m0[2]-1,1)}
 const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
@@ -150,27 +150,66 @@ function fileCard(f,kind,i){
   :`<a class="pdf" href="${esc(viewUrl(f.id))}" target="_blank" rel="noopener">PDF</a>`;
  return `<div class="th">${view}<div class="meta"><span title="${name}">${name}</span><span>${f.size?kb(f.size):''}</span><a href="${esc(orig(f.id))}" target="_blank" rel="noopener">Baixar original ↓</a></div><button type="button" class="x" data-rm="${kind}" data-i="${i}" aria-label="Remover ${name}">✕</button></div>`;
 }
+const pendCards=k=>pend.filter(x=>x.kind===k).map(x=>`<div class="th busy"><span>Enviando ${Math.round(x.p*100)}%<br><small>${esc(x.name)}</small></span></div>`).join('');
 function renderFiles(){
- $('#tIdea').innerHTML=ed.ideaImgs.map((f,i)=>fileCard(f,'idea',i)).join('')+(busy&&pickKind==='idea'?`<div class="th busy">Enviando ${busy}…</div>`:'');
- $('#tFinal').innerHTML=ed.final.map((f,i)=>fileCard(f,'final',i)).join('')+(busy&&pickKind==='final'?`<div class="th busy">Enviando ${busy}…</div>`:'');
+ $('#tIdea').innerHTML=ed.ideaImgs.map((f,i)=>fileCard(f,'idea',i)).join('')+pendCards('idea');
+ $('#tFinal').innerHTML=ed.final.map((f,i)=>fileCard(f,'final',i)).join('')+pendCards('final');
 }
 const toB64=f=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>no(r.error);r.readAsDataURL(f)});
-async function upload(files,kind){
- pickKind=kind;
- for(const f of files){
-  const ext=(f.name.split('.').pop()||'').toLowerCase(),type=EXT[ext]||f.type;
-  if(!Object.values(EXT).includes(type)){toast(`${f.name}: formato não aceito. Use PNG, JPG, MP4, MOV ou PDF (fotos HEIC do iPhone: exporte como JPG).`);continue}
-  if(f.size>20*1048576){toast(`${f.name} passa de 20 MB.`);continue}
-  busy++;renderFiles();
-  try{
-   const j=await api('enviar',{nome:f.name,tipo:type,dados:await toB64(f)});
-   const a=j.arquivo;if(type.startsWith('image/'))local[a.id]=URL.createObjectURL(f);
-   if(!ed){api('apagarArquivo',{id:a.id}).catch(()=>{});continue}
-   ed.fresh.push(a.id);(kind==='idea'?ed.ideaImgs:ed.final).push({id:a.id,name:a.name,type:a.type||type,size:a.size||f.size});
-   if(kind==='final'&&(ed.status==='ideia'||ed.status==='producao'))setStatus('pronto');
-  }catch(e){toast(`Falha ao enviar ${f.name}: ${e.message}`)}
-  finally{busy--;if(ed)renderFiles()}
+const LIM_FINAL=1024*1048576; // 1 GB
+let pend=[],raf=0;
+const busyN=()=>pend.length;
+/* prints de inspiração: reduz para enviar rápido (não precisam de qualidade máxima) */
+async function comprimir(f){
+ if(!/^image\/(png|jpeg|webp)$/.test(f.type)||f.size<300*1024)return f;
+ try{
+  const bmp=await createImageBitmap(f),k=Math.min(1,1600/Math.max(bmp.width,bmp.height));
+  const c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+  c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  const b=await new Promise(ok=>c.toBlob(ok,'image/jpeg',0.82));
+  return b&&b.size<f.size?new File([b],f.name.replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'}):f;
+ }catch(e){return f}
+}
+/* envio direto para o Google Drive (sem passar pelo Apps Script): rápido e sem limite de 20 MB */
+function putDireto(url,file,onp){
+ return new Promise((ok,no)=>{const x=new XMLHttpRequest();x.open('PUT',url);
+  x.upload.onprogress=e=>{if(e.lengthComputable)onp(e.loaded/e.total)};
+  x.onload=()=>{if(x.status>=200&&x.status<300){try{ok(JSON.parse(x.responseText))}catch(e){no(new Error('resposta inválida do Drive'))}}else no(new Error('Drive respondeu '+x.status))};
+  x.onerror=()=>no(new Error('falha de rede'));x.send(file)});
+}
+async function enviarArquivo(f,type,onp){
+ try{
+  const {url}=await api('iniciarEnvio',{nome:f.name,tipo:type,tamanho:f.size,origem:location.origin});
+  const r=await putDireto(url,f,onp);
+  return (await api('concluirEnvio',{id:r.id})).arquivo;
+ }catch(err){
+  if(err.message==='Senha incorreta')throw err;
+  if(f.size>20*1048576)throw new Error(err.message+' (arquivos acima de 20 MB precisam do Code.gs atualizado)');
+  onp(.5);return (await api('enviar',{nome:f.name,tipo:type,dados:await toB64(f)})).arquivo; // plano B
  }
+}
+async function pool(tasks,n){const fila=[...tasks];await Promise.all(Array.from({length:Math.min(n,fila.length)},async()=>{while(fila.length)await fila.shift()()}))}
+async function upload(files,kind){
+ const tasks=[];
+ for(const f0 of files){
+  const ext=(f0.name.split('.').pop()||'').toLowerCase(),type0=EXT[ext]||f0.type;
+  if(!Object.values(EXT).includes(type0)){toast(`${f0.name}: formato não aceito. Use PNG, JPG, MP4, MOV ou PDF (fotos HEIC do iPhone: exporte como JPG).`);continue}
+  if(f0.size>LIM_FINAL){toast(`${f0.name} passa de 1 GB.`);continue}
+  const job={kind,name:f0.name,p:0};pend.push(job);
+  tasks.push(async()=>{
+   try{
+    const f=kind==='idea'?await comprimir(f0):f0,type=kind==='idea'&&f!==f0?'image/jpeg':type0;
+    const a=await enviarArquivo(f,type,p=>{job.p=p;if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(ed)renderFiles()})});
+    if(type.startsWith('image/'))local[a.id]=URL.createObjectURL(f);
+    if(!ed){api('apagarArquivo',{id:a.id}).catch(()=>{});return}
+    ed.fresh.push(a.id);(kind==='idea'?ed.ideaImgs:ed.final).push({id:a.id,name:a.name||f.name,type:a.type||type,size:a.size||f.size});
+    if(kind==='final'&&(ed.status==='ideia'||ed.status==='producao'))setStatus('pronto');
+   }catch(e){toast(`Falha ao enviar ${f0.name}: ${e.message}`)}
+   finally{pend=pend.filter(x=>x!==job);if(ed)renderFiles()}
+  });
+ }
+ if(ed)renderFiles();
+ await pool(tasks,3);
 }
 for(const z of ['#dIdea','#dFinal']){
  const el=$(z);
@@ -206,7 +245,7 @@ $('#cancel').onclick=()=>closeEd(true);
 $('#ov').addEventListener('mousedown',e=>{if(e.target===$('#ov'))closeEd(true)});
 $('#form').onsubmit=async e=>{
  e.preventDefault();if(!ed)return;
- if(busy){toast('Espere terminar o envio dos arquivos.');return}
+ if(busyN()){toast('Espere terminar o envio dos arquivos.');return}
  const date=$('#fdate').value;if(!date){$('#fdate').focus();return}
  const post={id:ed.id||uid(),date,title:$('#ftitle').value.trim(),channel:$('#fchan').value,status:ed.status,idea:$('#fidea').value,caption:$('#fcap').value,owner:$('#fowner').value.trim(),ideaImgs:ed.ideaImgs,final:ed.final,createdAt:ed.createdAt,updatedAt:Date.now()};
  const btn=$('#save');btn.disabled=true;btn.textContent='Salvando…';
