@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendário de posts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calmo, organizado, de equipe de comunicação da igreja
+   IDEA: um planner de parede de couro e papel kraft, mês aberto
+   PICTURE: o próprio calendário, grande, com miniaturas dos posts
+   COLOUR and TYPE: marrom café dominante, areia de apoio, caramelo de destaque; Sora + DM Sans
+   LAYOUT: faixa marrom com mês e resumo, grade de 7 dias + coluna de ideias da semana */
+:root{color-scheme:light dark;
+--bg:light-dark(#f4ece2,#1a120d);--panel:light-dark(#fffaf3,#251a13);--ink:light-dark(#2a1a10,#f1e5d6);
+--mute:light-dark(#7b6352,#b49d89);--line:light-dark(#e2d3c1,#3a2a1f);--band:light-dark(#4a2e1d,#110b07);
+--bandink:#f5e9da;--acc:#c98a3e;--accink:light-dark(#8a5718,#e0a85c);--out:light-dark(#efe5d8,#1e150f);
+--s-ideia:light-dark(#a8927f,#9c8573);--s-producao:#d4952a;--s-pronto:#4e8a5a;--s-publicado:light-dark(#5b3a25,#c9a27f)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "DM Sans",system-ui,sans-serif;overflow-x:clip}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.band{background:var(--band);color:var(--bandink);padding:clamp(20px,3vw,36px) max(4vw,16px) 22px}
+.top{display:flex;flex-wrap:wrap;align-items:end;gap:16px 28px;max-width:1400px;margin:auto}
+.kick{margin:0 0 4px;font-size:14px;color:#d7bfa3}
+h1{font:700 clamp(32px,4.4vw,50px)/1.05 Sora,sans-serif;margin:0;text-wrap:balance}
+.nav{display:flex;gap:8px;align-items:center}
+.nav button{height:44px;min-width:44px;border-radius:12px;border:1px solid #6e4b33;background:#5a3a26;color:var(--bandink);padding:0 14px;font-weight:500}
+.nav button:hover{background:#6b4630}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-inline-start:auto}
+.stat{display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;border-radius:999px;border:1px solid #6e4b33;background:transparent;color:var(--bandink);font-size:14px}
+.stat b{font:600 18px Sora,sans-serif}
+.stat[aria-pressed=true]{background:var(--bandink);color:#3a2416;border-color:var(--bandink)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--c)}
+.note{max-width:1400px;margin:10px auto 0;font-size:14px;color:#e8c99f}
+.note:empty{display:none}
+main{padding:18px max(2vw,10px) 60px;max-width:1440px;margin:auto}
+.head,.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,1.35fr);gap:6px}
+.head div{font-size:13px;color:var(--mute);padding:0 8px 6px;font-weight:500}
+.week{margin-bottom:6px}
+.day{background:var(--panel);border:1px solid var(--line);border-radius:12px;min-height:138px;padding:6px;display:flex;flex-direction:column;gap:4px;transition:border-color .15s}
+.day.out{background:var(--out);opacity:.75}
+.day.today{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.day.over{border-color:var(--acc);border-style:dashed}
+.dh{display:flex;align-items:center;gap:6px;padding:0 2px}
+.dh b{font:600 15px Sora,sans-serif}
+.today .dh b{background:var(--acc);color:#fff;border-radius:8px;padding:1px 7px}
+.wd{display:none;font-size:13px;color:var(--mute)}
+.add{margin-inline-start:auto;width:30px;height:30px;border-radius:9px;border:1px dashed var(--line);background:transparent;color:var(--mute);font-size:18px;line-height:1}
+.add:hover{border-color:var(--acc);color:var(--accink)}
+.chip{display:flex;align-items:center;gap:6px;width:100%;text-align:start;border:0;border-inline-start:4px solid var(--c);background:light-dark(#f3e9dd,#30231a);border-radius:8px;padding:4px 6px;font-size:13px;line-height:1.25}
+.chip:hover{background:light-dark(#eadccb,#3a2a1f)}
+.chip img{width:30px;height:30px;object-fit:cover;border-radius:5px;flex:none}
+.chip span{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.chip i{font-style:normal;color:var(--mute);font-size:12px;margin-inline-start:auto;flex:none}
+.wk{background:light-dark(#ead9c4,#2e2016);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px}
+.wk label{font:600 13px Sora,sans-serif;color:var(--accink)}
+.wk small{font:400 12px "DM Sans",sans-serif;color:var(--mute);margin-inline-start:4px}
+.wk textarea{flex:1;min-height:100px;resize:vertical;border:0;background:transparent;font-size:14px;line-height:1.45;padding:2px}
+.wk textarea::placeholder{color:var(--mute)}
+.empty{max-width:640px;margin:4px auto 16px;text-align:center;color:var(--mute);font-size:15px}
+/* modal */
+.ov{position:fixed;inset:0;background:rgb(20 12 7/.55);display:none;align-items:flex-start;justify-content:center;padding:4vh 12px;overflow-y:auto;z-index:10}
+.ov.on{display:flex}
+.md{background:var(--panel);border-radius:18px;width:min(860px,100%);padding:clamp(16px,3vw,28px);box-shadow:0 30px 80px rgb(0 0 0/.35)}
+.md h2{font:600 24px/1.1 Sora,sans-serif;margin:0 0 16px}
+.grid2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:12px}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.f>label,.f .row label,.lbl{font-size:13px;font-weight:700;color:var(--mute)}
+.f input,.f select,.f textarea{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font-size:16px;min-height:44px}
+.f textarea{min-height:96px;resize:vertical;line-height:1.45}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;display:flex;align-items:center;gap:7px;font-size:14px}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sec{border-top:1px solid var(--line);padding-top:14px;margin-top:4px}
+.sec h3{font:600 17px Sora,sans-serif;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.sec h3 span{font:400 13px "DM Sans",sans-serif;color:var(--mute)}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:14px;text-align:center;color:var(--mute);font-size:14px;cursor:pointer;background:var(--bg)}
+.drop.over,.drop:hover{border-color:var(--acc);color:var(--accink)}
+.drop b{color:var(--ink)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:10px}
+.th{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.th img,.th video{display:block;width:100%;aspect-ratio:1;object-fit:cover;cursor:zoom-in;background:#0002}
+.th .pdf{aspect-ratio:1;display:grid;place-items:center;font:600 20px Sora,sans-serif;color:var(--accink)}
+.th .meta{font-size:12px;padding:5px 7px;display:flex;flex-direction:column;gap:2px}
+.th .meta span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.th .meta a{color:var(--accink);font-weight:700;text-decoration:none}
+.th .x{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;border:0;background:rgb(30 18 10/.75);color:#fff;font-size:16px}
+.th.busy{display:grid;place-items:center;aspect-ratio:1;font-size:13px;color:var(--mute)}
+.row{display:flex;gap:8px;align-items:center}
+.mini{height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:transparent;font-size:13px;margin-inline-start:auto}
+.foot{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center}
+.btn{height:46px;padding:0 20px;border-radius:12px;border:1px solid var(--line);background:transparent;font-weight:700}
+.btn.pri{background:var(--band);color:var(--bandink);border-color:var(--band);margin-inline-start:auto}
+.btn.del{color:#b3432f;border-color:transparent}
+.btn.del.sure{background:#b3432f;color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+.lb{position:fixed;inset:0;background:rgb(10 6 3/.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:20;padding:16px}
+.lb.on{display:flex}
+.lb img{max-width:100%;max-height:82vh;border-radius:8px}
+.lb a,.lb button{color:#f5e9da;background:#3a2416;border:0;border-radius:10px;height:44px;padding:0 16px;display:inline-flex;align-items:center;text-decoration:none;font-weight:700}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-size:14px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+.toast.on{opacity:1}
+.login{position:fixed;inset:0;background:var(--band);display:none;align-items:center;justify-content:center;padding:20px;z-index:40}
+.login.on{display:flex}
+.login form{background:var(--panel);color:var(--ink);border-radius:20px;padding:28px;width:min(400px,100%);display:flex;flex-direction:column;gap:12px;box-shadow:0 30px 80px rgb(0 0 0/.4)}
+.login h2{font:700 28px/1.1 Sora,sans-serif;margin:0}
+.login p{margin:0;color:var(--mute);font-size:15px}
+.login input{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px 14px;font-size:16px;min-height:48px}
+.login .err{color:#b3432f;font-size:14px;min-height:20px}
+.login .chk{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--mute)}
+.sair{background:transparent!important;border-color:transparent!important;font-size:14px}
+.th .play{aspect-ratio:1;display:grid;place-items:center;background:#0004;color:#fff;font-size:32px;text-decoration:none;position:relative}
+.th .play img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;cursor:pointer}
+.th .play b{position:relative;text-shadow:0 2px 8px #000}
+@media(max-width:860px){
+ .head{display:none}
+ .week{display:block;background:transparent;margin-bottom:18px}
+ .wk{margin-bottom:6px}
+ .wk textarea{min-height:70px}
+ .day{min-height:0;margin-bottom:5px;flex-direction:row;flex-wrap:wrap;align-items:flex-start}
+ .day .dh{width:100%}
+ .day.out{display:none}
+ .wd{display:inline}
+ .chip{width:100%}
+ .week{display:flex;flex-direction:column}
+ .wk{order:-1}
+}
+@media(max-width:600px){.grid2{grid-template-columns:minmax(0,1fr)}.stats{margin-inline-start:0}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="band">
+ <div class="top">
+  <div>
+   <p class="kick">Comunicação · IPI Pacaembu</p>
+   <h1 id="mes">Calendário de posts</h1>
+  </div>
+  <div class="nav">
+   <button id="prev" aria-label="Mês anterior">‹</button>
+   <button id="hoje">Hoje</button>
+   <button id="next" aria-label="Próximo mês">›</button>
+   <button id="sair" class="sair">Sair</button>
+  </div>
+  <div class="stats" id="stats" aria-label="Filtrar por status"></div>
+ </div>
+ <p class="note" id="note"></p>
+</header>
+
+<main>
+ <p class="empty" id="empty" hidden>Nenhum post neste mês ainda. Toque no <b>+</b> de um dia para lançar a primeira ideia, ou escreva os temas na coluna <b>Ideias da semana</b>.</p>
+ <div class="head" id="head"></div>
+ <div id="cal"></div>
+</main>
+
+<div class="ov" id="ov" role="dialog" aria-modal="true" aria-labelledby="mdt">
+ <form class="md" id="form">
+  <h2 id="mdt">Novo post</h2>
+  <div class="grid2">
+   <div class="f"><label for="ftitle">Título / tema</label><input id="ftitle" placeholder="Ex.: Culto de Santa Ceia" autocomplete="off"></div>
+   <div class="f"><label for="fdate">Data</label><input id="fdate" type="date" required></div>
+   <div class="f"><label for="fchan">Formato</label><select id="fchan"></select></div>
+  </div>
+  <div class="f"><span class="lbl">Status</span><div class="seg" id="fstatus"></div></div>
+
+  <div class="sec">
+   <h3>A ideia <span>texto e prints de referência</span></h3>
+   <div class="f"><label for="fidea">Descrição da ideia</label><textarea id="fidea" placeholder="O que vai ser o post, referência, versículo, chamada…"></textarea></div>
+   <div class="drop" id="dIdea" tabindex="0" role="button" data-kind="idea"><b>Adicionar print da ideia</b> — clique, arraste ou cole (Ctrl+V)</div>
+   <div class="thumbs" id="tIdea"></div>
+  </div>
+
+  <div class="sec">
+   <h3>Post final <span>arquivo original, sem compressão (até 20 MB), guardado no Google Drive</span></h3>
+   <div class="f"><div class="row"><label for="fcap">Legenda</label><button type="button" class="mini" id="copy">Copiar legenda</button></div><textarea id="fcap" placeholder="Legenda pronta para colar no Instagram"></textarea></div>
+   <div class="drop" id="dFinal" tabindex="0" role="button" data-kind="final"><b>Enviar arte / vídeo final</b> — PNG, JPG, MP4 ou PDF em qualidade máxima</div>
+   <div class="thumbs" id="tFinal"></div>
+  </div>
+
+  <div class="f sec"><label for="fowner">Responsável</label><input id="fowner" placeholder="Quem está cuidando deste post" autocomplete="off"></div>
+
+  <div class="foot">
+   <button type="button" class="btn del" id="del" hidden>Excluir</button>
+   <button type="button" class="btn" id="cancel">Cancelar</button>
+   <button type="submit" class="btn pri" id="save">Salvar</button>
+  </div>
+ </form>
+</div>
+
+<div class="lb" id="lb"><img id="lbimg" alt=""><div class="row"><a id="lba" href="#" target="_blank" rel="noopener">Abrir original ↗</a><button type="button" id="lbx">Fechar</button></div></div>
+<input type="file" id="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,application/pdf" hidden>
+<div class="toast" id="toast"></div>
+<div class="login on" id="login"><form id="lform">
+ <h2>Calendário de posts</h2>
+ <p>Comunicação IPI Pacaembu. Digite a senha da equipe.</p>
+ <input type="password" id="lsenha" placeholder="Senha" autocomplete="current-password" required>
+ <label class="chk"><input type="checkbox" id="lkeep" checked> Manter conectado neste aparelho</label>
+ <div class="err" id="lerr"></div>
+ <button class="btn pri" id="lbtn" style="margin:0">Entrar</button>
+</form></div>
+
+<script src="app.js"></script>
+</body>
+</html>
